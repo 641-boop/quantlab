@@ -1,0 +1,49 @@
+# 快速冒烟测试配置：小股票池 + 短周期，用于验证全流程一键跑通。
+# 运行：uv run python examples/run_research.py --config configs/smoke.yaml
+
+data:
+  universe: "600519,000858,601318,000333,600036,601899"
+  start_date: "2019-01-01"
+  end_date: "2023-12-31"
+  data_dir: "data"
+  adjust: "hfq"
+
+factors:
+  names:
+    - momentum_20
+    - reversal_5
+    - volatility_20
+    - turnover_20
+    - rsi_14
+    - macd
+    - kbar_kmid
+    - kbar_klen
+  normalize: "zscore"
+  neutralize: false
+  neutralize_targets:
+    - market_cap
+
+model:
+  name: "lgbm"
+  label_horizon: 1
+  train_end: null
+  valid_end: null
+  params:
+    learning_rate: 0.05
+    num_leaves: 31
+
+backtest:
+  strategy: "topk"
+  top_k: 0.34
+  init_cash: 10000000
+  commission_rate: 0.00025
+  min_commission: 5.0
+  stamp_tax: 0.001
+  transfer_fee: 0.00001
+  slippage: 0.0005
+  risk_degree: 0.95
+  max_position_weight: 1.0
+  benchmark: "equal"
+
+report:
+  output_dir: "reports"

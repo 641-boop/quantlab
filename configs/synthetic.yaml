@@ -1,0 +1,55 @@
+# 离线演示配置：使用合成行情（无需网络），验证全流程一键跑通。
+# 先运行：uv run python examples/make_synthetic.py --n-stocks 30
+# 再运行：uv run python examples/run_research.py --config configs/synthetic.yaml
+
+data:
+  universe: "synthetic"     # 命中 make_synthetic.py 生成的 parquet 缓存
+  start_date: "2019-01-01"
+  end_date: "2023-12-31"
+  data_dir: "data"
+  adjust: "hfq"
+
+factors:
+  names:
+    - momentum_20
+    - momentum_60
+    - reversal_5
+    - volatility_20
+    - volume_ratio_20
+    - turnover_20
+    - corr_cv_20
+    - beta_oc_20
+    - rsi_14
+    - macd
+    - rsv_20
+    - cntp_20
+    - sump_20
+    - kbar_kmid
+    - kbar_klen
+    - wvma_20
+  normalize: "zscore"
+  neutralize: false
+  neutralize_targets:
+    - market_cap
+
+model:
+  name: "signal"            # 单因子信号，免训练（离线/CI 可用，无需原生 ML 运行库）
+  label_horizon: 1
+  params:
+    factor: "momentum_20"   # 直接作为预测值的因子
+
+backtest:
+  strategy: "topk"
+  top_k: 0.2
+  init_cash: 100000000
+  commission_rate: 0.00025
+  min_commission: 5.0
+  stamp_tax: 0.001
+  transfer_fee: 0.00001
+  slippage: 0.0005
+  risk_degree: 0.95
+  max_position_weight: 1.0
+  benchmark: "equal"
+
+report:
+  output_dir: "reports"
