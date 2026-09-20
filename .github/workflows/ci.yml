@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # 允许在 GitHub 网页上手动点 "Run workflow" 触发（本地没环境时也能跑出报告）
+  workflow_dispatch:
 
 jobs:
   lint-and-test:
