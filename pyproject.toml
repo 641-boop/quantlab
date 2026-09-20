@@ -24,6 +24,11 @@ dependencies = [
     "seaborn>=0.12",
 ]
 
+[project.optional-dependencies]
+# ARM 设备 / 老 CPU（不支持 AVX2）上 Polars 会报 "Missing required CPU features" 并直接崩溃，
+# 加装官方兼容运行时即可解决：uv sync --extra rtcompat
+rtcompat = ["polars[rtcompat]>=0.20"]
+
 [dependency-groups]
 dev = [
     "ruff>=0.5",

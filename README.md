@@ -98,6 +98,10 @@ python -m pip install uv
 
 # 2. 安装依赖并创建虚拟环境
 uv sync
+
+# 3.（仅 ARM 设备 / 较老 CPU 需要）Polars 默认运行库要求 AVX2，会直接崩溃：
+#    用这条命令加装官方兼容运行时即可
+uv sync --extra rtcompat
 ```
 
 ### 运行真实行情 demo
@@ -150,13 +154,12 @@ reports/20260908_000753/
 
 ## 成果展示
 
-下面是一次离线合成数据 demo（`configs/synthetic.yaml`，单因子 `momentum_20`）跑出的回测表现；
-该次运行早于 VaR / 压力测试功能的加入，所以下面的截图和数值不含风险章节——新版每次运行
-会在 [风险指标与压力测试](#风险指标与压力测试) 一节额外输出 VaR / CVaR / 压力测试表与 `risk.png`。
-合成数据里人为嵌入了动量信号，所以指标显著为正；这里只用来演示流水线和报告长什么样，
+下面是一次离线合成数据 demo（`configs/synthetic.yaml`，单因子 `momentum_20`，40 只股票 /
+2019–2023 / 1,304 个交易日）的完整输出，包含收益表现、风险指标和压力测试。
+合成数据里人为嵌入了动量信号，所以下面的指标明显偏乐观；这里只用来演示流水线和报告长什么样，
 不代表真实市场的收益水平。
 
-### 回测指标
+### 回测表现
 
 | 指标 | 数值 | 指标 | 数值 |
 | --- | --- | --- | --- |
@@ -166,6 +169,27 @@ reports/20260908_000753/
 | 最大回撤 | 7.84% | 日胜率 | 58.79% |
 | 信息比率 | 6.56 | Beta | 0.99 |
 | Alpha(年化) | 100.34% | — | — |
+
+### 风险指标与压力测试
+
+| 风险指标 | 数值 |
+| --- | --- |
+| VaR (95%, 1 日) | 1.05% |
+| VaR (99%, 1 日) | 1.46% |
+| CVaR / ES (95%) | 1.35% |
+| CVaR / ES (99%) | 1.72% |
+| 最长水下时间 | 63 个交易日 |
+
+| 压力情景 | 组合预估冲击 |
+| --- | --- |
+| 单日 -5% | -4.93% |
+| 单日 -10% | -9.86% |
+| 连续 3 日 -5% | -14.07% |
+| 连续 5 日 -3% | -13.94% |
+
+<p align="center">
+  <img src="docs/images/risk.png" alt="风险分析：日收益分布与滚动 VaR" width="78%"/>
+</p>
 
 ### 净值与回撤
 
@@ -350,6 +374,13 @@ Lint        ruff check .
 - **Windows 上 `import torch` 报 `c10.dll`、LightGBM 报 `access violation`**：torch 与
   LightGBM 的原生库由 MSVC 编译，依赖 Microsoft Visual C++ 2015–2022 Redistributable
   (x64)，装上这个运行库即可解决。只用 LightGBM 时 torch 是惰性导入，不影响 LGBM 路径。
+- **ARM 设备（如骁龙 Windows 笔记本）或较老 CPU 上 `import polars` 直接崩溃**：
+  报 `RuntimeWarning: Missing required CPU features ... avx, avx2, fma, bmi1, bmi2`，
+  进程以「非法指令」（exit code `0xC000001D`）退出。原因是 Polars 默认运行库要求 AVX2 指令，
+ 而老 CPU 不提供、ARM 上的 x64 模拟层也不提供。装官方兼容运行时即可：
+  `uv sync --extra rtcompat`（或 `pip install "polars[rtcompat]"`）。安装后 Polars 会按
+  `compat > 64 > 32` 的优先级自动选用兼容运行库。**不要**用 `POLARS_SKIP_CPU_CHECK=1` 绕过，
+  崩溃依然存在。
 
 ## 路线图
 
